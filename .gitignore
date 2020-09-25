@@ -3,10 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+build_code.txt
 # C extensions
 *.so
-
+test/
 # Distribution / packaging
+.data_output.xls
+/CODE/data_output.xls
+data_output.xls
+.idea/
 .Python
 build/
 develop-eggs/

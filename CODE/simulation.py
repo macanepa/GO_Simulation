@@ -2,7 +2,7 @@ import random
 import simpy
 import numpy as np
 
-dist_demand = [
+demand_distribution_o = [
                 .0012,
                 .2043,
                 .2008,
@@ -17,25 +17,30 @@ dist_demand = [
                 .0016,
                 ]
 
+demand_distribution = []
 
-total_day = 4282
-demand = []
+total_daily_messages = 6000
+hourly_parameter = []
 
-for dist in dist_demand:
-    demand.append((1/(total_day*dist/60)*100.0)//1/100.0)
-demand = demand[:9]
-demand = [12,0.07,.07,.08,.1,.16,.21,.21,.41]
-#demand = [11.676786548341898, 0.06858611775824902, 0.06978159291837786, 0.08141861625804925, 0.0957113651503434, 0.1648487512707091, 0.20976263260494427, 0.20545665480953484, 0.4109133096190697]
-
-
-print(demand)
-input("enter to continue...")
+def generate_hourly_param():
+    global hourly_parameter
+    hourly_parameter = []
+    for dist in demand_distribution:
+        hourly_parameter.append(((total_daily_messages * dist / 60)))
+    #hourly_parameter = hourly_parameter[:9]
+    #hourly_parameter = [12, 0.07, .07, .08, .1, .16, .21, .21, .41]
+    #print(hourly_parameter)
 
 def exp(p, lambda_):
     return ((-1/lambda_)*np.log(1 - p))
 
-def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVICE_TIME, SIM_TIME):
-
+def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVICE_TIME, SIM_TIME, morning, total_daily):
+    global demand_distribution_o, demand_distribution
+    if morning:
+        demand_distribution = demand_distribution_o
+    else:
+        demand_distribution = demand_distribution_o
+    generate_hourly_param()
     license_waiting_time = []
     credit_waiting_time = []
     other_waiting_time = []
@@ -47,10 +52,8 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             self.service_time = service_time
 
         def attend(self, message):
-            real_service_time = exp(random.random(), .056/4)
+            real_service_time = exp(random.random(), .056)
             yield self.env.timeout(real_service_time)
-
-
 
     class CallCenterCredit(object):
         def __init__(self, env, num_employess, service_time):
@@ -59,10 +62,8 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             self.service_time = service_time
 
         def attend(self, message):
-            real_service_time = exp(random.random(), .056/4)
+            real_service_time = exp(random.random(), .056)
             yield self.env.timeout(real_service_time)
-
-
 
     class CallCenterOther(object):
         def __init__(self, env, num_employess, service_time):
@@ -71,15 +72,12 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             self.service_time = service_time
 
         def attend(self, message):
-            real_service_time = exp(random.random(), .056/4)
+            real_service_time = exp(random.random(), .056)
             yield self.env.timeout(real_service_time)
 
 
 
-
-
     def message_license(env, name, cc):
-
         init = env.now
         with cc.employee.request() as request:
             yield request
@@ -87,7 +85,6 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             yield env.process(cc.attend(name))
 
     def message_credit(env, name, cc):
-
         init = env.now
         with cc.employee.request() as request:
             yield request
@@ -95,7 +92,6 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             yield env.process(cc.attend(name))
 
     def message_other(env, name, cc):
-
         init = env.now
         with cc.employee.request() as request:
             yield request
@@ -103,19 +99,25 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
             yield env.process(cc.attend(name))
 
 
-    def setup(env, num_employees_license, num_employees_credit, num_employees_other, service_time):
+    def setup(env, num_employees_license, num_employees_credit, num_employees_other, service_time, total_daily):
 
         # Create the call_centers
         call_center_license = CallCenterLicense(env, num_employees_license, service_time)
         call_center_credit = CallCenterCredit(env, num_employees_credit, service_time)
         call_center_other = CallCenterOther(env, num_employees_other, service_time)
 
+        global total_daily_messages
+        total_daily_messages = total_daily
+
+        mm = .5
+        if not morning:
+            mm += .5
 
         # Create messages while the simulation is running
         i = 0
         while True:
             current_hour = int(env.now//60)
-            yield env.timeout(exp(random.random(), demand[current_hour]))
+            yield env.timeout(exp(random.random(), hourly_parameter[current_hour])*mm)
             i += 1
             choice = random.random()
             if choice < 0.41:
@@ -127,7 +129,7 @@ def sim(NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVIC
 
     # Create an environment and start the setup process
     env = simpy.Environment()
-    env.process(setup(env, NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVICE_TIME))
+    env.process(setup(env, NUM_EMPLOYEES_LICENSE, NUM_EMPLOYEES_CREDIT, NUM_EMPLOYEES_OTHER, SERVICE_TIME, total_daily))
 
     # Execute!
     env.run(until=SIM_TIME)
