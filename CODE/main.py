@@ -9,7 +9,7 @@ def save_to_xl(path, results, confidence, demand):
 
     results_sheet.write(0,0,'CATEGORY')
     results_sheet.write(1,0,'N° EMPLOYEES')
-    results_sheet.write(2, 0, 'CONF.INTERVAL HIGH BOUND')
+    results_sheet.write(2, 0, 'CONF.INTERVAL HIGHEST TIME (minutes)')
     for index, value in enumerate(results):
         results_sheet.write(0, index + 1, value)
         results_sheet.write(1, index + 1, results[value]['number_employees'])
