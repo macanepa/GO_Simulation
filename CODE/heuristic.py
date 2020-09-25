@@ -41,14 +41,14 @@ def run_heuristic(num_employees_license, num_employees_credit, num_employees_oth
     }
     return return_dict
 
-def initialize(morning, total_daily, confidence=None):
+def initialize(morning, total_daily, confidence, max_waiting_time):
 
     num_employees_license = 0
     num_employees_credit = 0
     num_employees_other = 0
 
 
-    max_waiting_time = 15
+    #max_waiting_time = 15
     if not confidence:
         confidence = 0.95
     capacity_per_resource = 3
@@ -97,10 +97,7 @@ def initialize(morning, total_daily, confidence=None):
             if license_optimal and credit_optimal and other_optimal:
                 print("Iter Step: {}, Done".format(steps))
                 break
-        num_employees_license = (num_employees_license//steps - 1)*steps
-        num_employees_credit = (num_employees_credit // steps - 1) * steps
-        num_employees_other = (num_employees_other // steps - 1) * steps
-        steps = steps // 10
+
 
         day_time = 'afternoon'
         if morning:
@@ -122,3 +119,8 @@ def initialize(morning, total_daily, confidence=None):
                 },
             }
             return return_dict
+
+        num_employees_license = (num_employees_license//steps - 1)*steps
+        num_employees_credit = (num_employees_credit // steps - 1) * steps
+        num_employees_other = (num_employees_other // steps - 1) * steps
+        steps = steps // 10

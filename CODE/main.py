@@ -2,6 +2,7 @@ import heuristic
 import os
 import xlwt
 import mcutils as mc
+from pprint import pprint
 
 def save_to_xl(path, results, confidence, demand):
     xl_worksheet = xlwt.Workbook()
@@ -65,7 +66,7 @@ def save_to_xl(path, results, confidence, demand):
 total_daily = int(mc.get_input(text='Introduce la demanda total diaria estimada (numero entero)', return_type=int))
 max_time = int(mc.get_input(text='Introduce el tiempo maximo de espera (numero entero en minutos)', return_type=int))
 while True:
-    conf = mc.get_input(text='Introduce nivel de confianza (dejar en blanco para default 0.95)')
+    conf = mc.get_input(text='Introduce el nivel de confianza deseado (dejar en blanco para default 0.95)')
     if conf == '':
         confidence = 0.95
         break
@@ -78,13 +79,13 @@ while True:
             None
 
 
-final_m = heuristic.initialize(morning=True, total_daily=total_daily, confidence=confidence)
-final_a = heuristic.initialize(morning=False, total_daily=total_daily, confidence=confidence)
+final_m = heuristic.initialize(morning=True, total_daily=total_daily, confidence=confidence, max_waiting_time=max_time)
+final_a = heuristic.initialize(morning=False, total_daily=total_daily, confidence=confidence, max_waiting_time=max_time)
 
 final_m.update(final_a)
 final = final_m
 
-print(final)
+pprint(final)
 path = os.getcwd()
 path = os.path.join(path, 'data_output.xls')
 save_to_xl(path, final, confidence, total_daily)
